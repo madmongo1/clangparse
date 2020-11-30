@@ -4,11 +4,12 @@
 #include <iostream>
 #include <stdexcept>
 
-std::ostream& operator<<(std::ostream& stream, const CXString& str)
+std::ostream &
+operator<<(std::ostream &stream, const CXString &str)
 {
-  stream << clang_getCString(str);
-  clang_disposeString(str);
-  return stream;
+    stream << clang_getCString(str);
+    clang_disposeString(str);
+    return stream;
 }
 
 /// @brief Here is my main function.
@@ -61,12 +62,48 @@ main(int argc, char **argv)
         clang_visitChildren(
             cursor,
             [](CXCursor c, CXCursor parent, CXClientData client_data) {
-                std::cout << "Cursor '" << clang_getCursorSpelling(c)
-                          << "' of kind '"
-                          << clang_getCursorKindSpelling(
-                                 clang_getCursorKind(c))
-                          << "'\n";
-                return CXChildVisit_Recurse;
+                switch (auto ck = clang_getCursorKind(c))
+                {
+                case CXCursorKind::CXCursor_Namespace:
+                {
+                    auto str = clang_getCursorSpelling(c);
+                    auto s = std::string(clang_getCString(str));
+                    if (s == "std" || s.starts_with("__"))
+                    {
+                        std::cout << "Ignoring namespace " << s << "\n";
+                        clang_disposeString(str);
+                        return CXChildVisit_Continue;
+                    }
+                    else
+                    {
+                        std::cout << "Cursor '" << str << "' of kind '"
+                                  << clang_getCursorKindSpelling(
+                                         clang_getCursorKind(c))
+                                  << "'\n";
+                        return CXChildVisit_Recurse;
+                    }
+                }
+                break;
+
+                case CXCursorKind::CXCursor_Constructor:
+                {
+                    auto attrs = clang_Cursor_hasAttrs(c);
+                    std::cout << "Cursor '" << clang_getCursorSpelling(c)
+                              << "' of kind '"
+                              << clang_getCursorKindSpelling(
+                                     clang_getCursorKind(c))
+                              << "' has " << attrs << " attributes\n";
+                }
+                    return CXChildVisit_Recurse;
+
+                default:
+                    std::cout << "Cursor '" << clang_getCursorSpelling(c)
+                              << "' of kind '"
+                              << clang_getCursorKindSpelling(
+                                     clang_getCursorKind(c))
+                              << "'\n";
+                    return CXChildVisit_Recurse;
+                }
             },
             nullptr);
     }

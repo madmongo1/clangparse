@@ -4,7 +4,7 @@ include(FetchContent)
 
 project(clangparse)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 message(STATUS "FIND_LIBRARY_USE_LIB64_PATHS=${FIND_LIBRARY_USE_LIB64_PATHS}")
 
